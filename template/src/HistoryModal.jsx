@@ -54,7 +54,7 @@ export default function HistoryModal({ onClose, onToast }) {
             placeholder="Name this checkpoint (optional)…"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') checkpoint() }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !(e.nativeEvent?.isComposing || e.keyCode === 229)) checkpoint() }}
           />
           <button className="btn btn-primary" onClick={checkpoint} disabled={busy}>
             <Icon name="clock" size={15} stroke={2} /> Save checkpoint

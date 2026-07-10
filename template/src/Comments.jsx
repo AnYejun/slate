@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Icon, IconButton } from './Icon.jsx'
+import { isComposingEvent } from './sync.js'
 
 const TYPE_ICON = {
   heading: 'heading',
@@ -99,7 +100,10 @@ function CommentItem({ comment, cards, active, onFocus, onUpdate, onReply, onRes
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && draft.trim()) { onReply(comment.id, draft.trim()); setDraft('') }
+            if (e.key === 'Enter' && draft.trim()) {
+              if (isComposingEvent(e)) return // Korean IME guard
+              onReply(comment.id, draft.trim()); setDraft('')
+            }
           }}
         />
         <IconButton icon="send" label="Send reply" variant="subtle" size={30} iconSize={16}

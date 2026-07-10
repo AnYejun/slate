@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { PRESETS } from './model.js'
 import { Icon, IconButton } from './Icon.jsx'
+import { applyDesign, listDesigns } from './sync.js'
 
 const TYPE_META = {
   heading: { icon: 'heading', label: 'Heading' },
@@ -85,7 +86,34 @@ function ActionGroup({ items, onAction }) {
   )
 }
 
-export default function Inspector({ card, element, selectedCount = 0, onCardChange, onElChange, onElStyle, onDelete, onOrder, onAlign, onDistribute }) {
+function StylePicker({ onToast }) {
+  const [styles, setStyles] = useState([])
+  const [current, setCurrent] = useState(null)
+  useEffect(() => {
+    listDesigns().then((d) => { setStyles(d.styles || []); setCurrent(d.current) })
+  }, [])
+  if (!styles.length) return null
+  return (
+    <Row label="Style">
+      <select
+        value={current || ''}
+        onChange={async (e) => {
+          const name = e.target.value
+          if (!name) return
+          const ok = await applyDesign(name)
+          if (ok) { setCurrent(name); onToast?.(`Style “${name}” applied — agents will follow it`) }
+        }}
+      >
+        <option value="" disabled>Design system…</option>
+        {styles.map((s) => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
+    </Row>
+  )
+}
+
+export default function Inspector({ card, element, selectedCount = 0, onCardChange, onElChange, onElStyle, onDelete, onOrder, onAlign, onDistribute, onToast }) {
   const meta = element ? TYPE_META[element.type] : null
   const isText = element && (element.type === 'heading' || element.type === 'text')
   const multi = selectedCount > 1
@@ -120,6 +148,8 @@ export default function Inspector({ card, element, selectedCount = 0, onCardChan
         <Row label="Background">
           <Color value={card.background} onChange={(v) => onCardChange({ background: v })} />
         </Row>
+        <StylePicker onToast={onToast} />
+        <p className="insp-hint">Background also takes <code>linear:#from,#to,angle</code> gradients.</p>
       </section>
 
       {multi ? (
@@ -189,6 +219,20 @@ export default function Inspector({ card, element, selectedCount = 0, onCardChan
           </Row>
           <Row label="Rotation">
             <Num value={element.rotation} onChange={(v) => onElChange({ rotation: v })} />
+          </Row>
+          <Row label="Opacity / Blur">
+            <span className="pair">
+              <Num value={element.style.opacity ?? 1} step={0.05} min={0} onChange={(v) => onElStyle({ opacity: Math.max(0, Math.min(1, v)) })} />
+              <Num value={element.style.blur || 0} min={0} onChange={(v) => onElStyle({ blur: v })} />
+            </span>
+          </Row>
+          <Row label="Shadow">
+            <input
+              type="text"
+              placeholder="dx dy blur color — e.g. 0 24 60 rgba(0,0,0,0.35)"
+              value={element.style.shadow || ''}
+              onChange={(e) => onElStyle({ shadow: e.target.value || undefined })}
+            />
           </Row>
 
           {isText && (

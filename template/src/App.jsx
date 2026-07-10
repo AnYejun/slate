@@ -45,6 +45,9 @@ export default function App() {
   const areaRef = useRef(null)
   const [area, setArea] = useState({ w: 800, h: 600 })
   const H = useRef({ past: [], future: [], base: null, silent: false })
+  const [zoom, setZoom] = useState(null) // null = fit to view
+  const [drawMode, setDrawMode] = useState(null) // 'line' | null
+  const fitRef = useRef(1)
 
   // ── sub-agent runs (the work board) ──
   const [agentRuns, setAgentRuns] = useState({}) // id → {name, cardId, status, log, directives, ...}
@@ -288,12 +291,30 @@ export default function App() {
   const cardComments = useMemo(() => comments.filter((c) => c.cardId === card?.id), [comments, card])
   const openCount = comments.filter((c) => c.status !== 'resolved').length
 
-  const scale = useMemo(() => {
+  const fitScale = useMemo(() => {
     if (!card) return 1
     const margin = 16
     const s = Math.min((area.w - margin) / card.width, (area.h - margin) / card.height)
     return Math.max(0.05, Math.min(s, 1))
   }, [card, area])
+  const scale = zoom ?? fitScale
+  useEffect(() => { fitRef.current = fitScale }, [fitScale])
+
+  // ⌘/ctrl + wheel zoom
+  useEffect(() => {
+    const el = areaRef.current
+    if (!el) return
+    function onWheel(e) {
+      if (!(e.ctrlKey || e.metaKey)) return
+      e.preventDefault()
+      setZoom((z) => {
+        const cur = z ?? fitRef.current
+        return Math.min(4, Math.max(0.05, cur * (1 - e.deltaY * 0.0025)))
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [doc])
 
   // ── mutations ──
   const mutateCard = useCallback(
@@ -481,6 +502,27 @@ export default function App() {
     if (f) insertImageFile(f)
   }
 
+  // drag-to-draw line: two points → horizontal line + rotation about center
+  function drawLine(x1, y1, x2, y2) {
+    if (!card) return
+    const L = Math.hypot(x2 - x1, y2 - y1)
+    if (L < 8) { setDrawMode(null); return }
+    const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI
+    const cx = (x1 + x2) / 2
+    const cy = (y1 + y2) / 2
+    const el = {
+      ...newElement('line', card),
+      x: Math.round(cx - L / 2),
+      y: Math.round(cy),
+      w: Math.round(L),
+      h: 0,
+      rotation: Math.round(angle),
+    }
+    mutateCard(card.id, { elements: [...card.elements, el] })
+    setSelIds([el.id])
+    setDrawMode(null)
+  }
+
   // ── element actions ──
   function addElement(type) {
     if (!card) return
@@ -586,7 +628,12 @@ export default function App() {
       }
       if (mod && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return }
       if (typing) return
-      if (e.key === 'Escape') { if (commentMode) setCommentMode(false); else clearSel(); return }
+      if (e.key === 'Escape') {
+        if (drawMode) setDrawMode(null)
+        else if (commentMode) setCommentMode(false)
+        else clearSel()
+        return
+      }
       if (!selIds.length) return
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected() }
       else if (e.key.startsWith('Arrow')) {
@@ -602,7 +649,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selIds, card, editingEl, commentMode, mutateMany, doc])
+  }, [selIds, card, editingEl, commentMode, drawMode, mutateMany, doc])
 
   if (!doc || !card) return <div className="loading">Loading…</div>
 
@@ -629,8 +676,21 @@ export default function App() {
               {i === 2 || i === 5 ? <span className="divider-v" /> : null}
               <IconButton
                 icon={t.icon}
-                label={t.type === 'image' ? 'Image — pick a file (or drop one on the canvas)' : t.label}
-                onClick={() => (t.type === 'image' ? fileRef.current?.click() : addElement(t.type))}
+                label={
+                  t.type === 'image'
+                    ? 'Image — pick a file (or drop one on the canvas)'
+                    : t.type === 'line'
+                      ? 'Line — click, then drag on the canvas to draw'
+                      : t.label
+                }
+                className={t.type === 'line' && drawMode === 'line' ? 'on' : ''}
+                onClick={() =>
+                  t.type === 'image'
+                    ? fileRef.current?.click()
+                    : t.type === 'line'
+                      ? setDrawMode((d) => (d === 'line' ? null : 'line'))
+                      : addElement(t.type)
+                }
               />
             </React.Fragment>
           ))}
@@ -677,7 +737,13 @@ export default function App() {
             {openCount > 0 && <span className="badge">{openCount}</span>}
           </button>
           <span className="divider-v-sm" />
-          <span className="zoom">{Math.round(scale * 100)}%</span>
+          <IconButton icon="minus" label="Zoom out" variant="subtle" size={26} iconSize={14}
+            onClick={() => setZoom((z) => Math.max(0.05, (z ?? fitRef.current) / 1.25))} />
+          <button className="zoom zoom-reset" onClick={() => setZoom(null)} title="Fit to view">
+            {Math.round(scale * 100)}%
+          </button>
+          <IconButton icon="plus" label="Zoom in" variant="subtle" size={26} iconSize={14}
+            onClick={() => setZoom((z) => Math.min(4, (z ?? fitRef.current) * 1.25))} />
           <IconButton
             icon={isFullscreen ? 'shrink' : 'expand'}
             label={isFullscreen ? 'Exit full screen' : 'Full screen'}
@@ -756,6 +822,8 @@ export default function App() {
                 .filter(([, a]) => a.cardId === card.id)
                 .map(([name, a]) => ({ name, ...a }))}
               glowIds={glowIds}
+              drawMode={drawMode}
+              onDrawLine={drawLine}
             />
           </div>
         </div>
@@ -794,6 +862,7 @@ export default function App() {
             onOrder={orderElement}
             onAlign={alignSelected}
             onDistribute={distributeSelected}
+            onToast={toastMsg}
           />
         ) : (
           <Comments

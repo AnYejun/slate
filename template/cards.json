@@ -7,62 +7,26 @@
       "name": "Cover",
       "width": 1080,
       "height": 1350,
-      "background": "#0f172a",
+      "background": "linear:#0B1020,#1B1140,160",
       "elements": [
-        {
-          "id": "el-badge",
-          "type": "rect",
-          "x": 100,
-          "y": 150,
-          "w": 172,
-          "h": 68,
-          "rotation": 0,
-          "style": { "fill": "#3b82f6", "stroke": "none", "strokeWidth": 0, "radius": 34 }
-        },
-        {
-          "id": "el-badge-t",
-          "type": "text",
-          "x": 100,
-          "y": 150,
-          "w": 172,
-          "h": 68,
-          "rotation": 0,
-          "text": "SLATE",
-          "style": { "color": "#ffffff", "fontSize": 30, "fontWeight": 800, "textAlign": "center", "vAlign": "center", "lineHeight": 1, "letterSpacing": 3 }
-        },
-        {
-          "id": "el-title",
-          "type": "heading",
-          "x": 100,
-          "y": 440,
-          "w": 900,
-          "h": 320,
-          "rotation": 0,
-          "text": "Design by\nconversation.",
-          "style": { "color": "#f8fafc", "fontSize": 118, "fontWeight": 800, "textAlign": "left", "vAlign": "top", "lineHeight": 1.05, "letterSpacing": -3 }
-        },
-        {
-          "id": "el-line",
-          "type": "line",
-          "x": 100,
-          "y": 830,
-          "w": 220,
-          "h": 0,
-          "rotation": 0,
-          "style": { "stroke": "#3b82f6", "strokeWidth": 8, "arrow": false }
-        },
-        {
-          "id": "el-sub",
-          "type": "text",
-          "x": 100,
-          "y": 890,
-          "w": 860,
-          "h": 180,
-          "rotation": 0,
-          "text": "Edit on the right. I keep refining on the left.",
-          "style": { "color": "#94a3b8", "fontSize": 44, "fontWeight": 400, "textAlign": "left", "vAlign": "top", "lineHeight": 1.4 }
-        }
+        { "id": "orb-1", "type": "ellipse", "x": -260, "y": -220, "w": 720, "h": 720, "rotation": 0,
+          "style": { "fill": "#5EEAD4", "stroke": "none", "strokeWidth": 0, "opacity": 0.32, "blur": 110 } },
+        { "id": "orb-2", "type": "ellipse", "x": 640, "y": 900, "w": 640, "h": 640, "rotation": 0,
+          "style": { "fill": "#A78BFA", "stroke": "none", "strokeWidth": 0, "opacity": 0.28, "blur": 100 } },
+        { "id": "panel", "type": "rect", "x": 90, "y": 360, "w": 900, "h": 640, "rotation": -1,
+          "style": { "fill": "rgba(255,255,255,0.08)", "stroke": "rgba(255,255,255,0.25)", "strokeWidth": 1.5, "radius": 32, "shadow": "0 24 60 rgba(0,0,0,0.35)" } },
+        { "id": "label", "type": "text", "x": 150, "y": 430, "w": 500, "h": 44, "rotation": 0,
+          "text": "SLATE", "style": { "color": "#5EEAD4", "fontSize": 27, "fontWeight": 700, "textAlign": "left", "vAlign": "top", "lineHeight": 1, "letterSpacing": 5, "opacity": 0.85 } },
+        { "id": "title-1", "type": "heading", "x": 150, "y": 510, "w": 800, "h": 150, "rotation": 0,
+          "text": "Design by", "style": { "color": "#F8FAFC", "fontSize": 118, "fontWeight": 800, "textAlign": "left", "vAlign": "top", "lineHeight": 1.05, "letterSpacing": -3 } },
+        { "id": "title-2-glow", "type": "heading", "x": 150, "y": 650, "w": 800, "h": 170, "rotation": 0,
+          "text": "conversation.", "style": { "color": "#5EEAD4", "fontSize": 118, "fontWeight": 700, "textAlign": "left", "vAlign": "top", "lineHeight": 1.05, "letterSpacing": -2, "blur": 18, "opacity": 0.55, "fontFamily": "'Noto Serif KR','Nanum Myeongjo',serif" } },
+        { "id": "title-2", "type": "heading", "x": 150, "y": 650, "w": 800, "h": 170, "rotation": 0,
+          "text": "conversation.", "style": { "color": "#5EEAD4", "fontSize": 118, "fontWeight": 700, "textAlign": "left", "vAlign": "top", "lineHeight": 1.05, "letterSpacing": -2, "fontFamily": "'Noto Serif KR','Nanum Myeongjo',serif" } },
+        { "id": "sub", "type": "text", "x": 150, "y": 860, "w": 720, "h": 100, "rotation": 0,
+          "text": "You sketch, comment, and command.\nClaude designs beside you — live.", "style": { "color": "#C7D2E5", "fontSize": 40, "fontWeight": 400, "textAlign": "left", "vAlign": "top", "lineHeight": 1.45 } }
       ]
     }
-  ]
+  ],
+  "comments": []
 }

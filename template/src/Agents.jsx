@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Icon, IconButton } from './Icon.jsx'
+import { isComposingEvent } from './sync.js'
 
 function elapsed(ms) {
   const s = Math.floor(ms / 1000)
@@ -143,6 +144,7 @@ export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
+              if (isComposingEvent(e)) return // Korean IME: composing Enter ≠ submit
               e.preventDefault()
               fire()
             }

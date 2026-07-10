@@ -98,17 +98,31 @@ export default function CardView({
   onOpenComment,
   cursors = [],
   glowIds = new Set(),
+  drawMode = null,
+  onDrawLine,
 }) {
   const dragRef = useRef(null)
   const marqueeRef = useRef(null)
+  const drawRef = useRef(null)
   const innerRef = useRef(null)
   const [guides, setGuides] = useState(null)
   const [marquee, setMarquee] = useState(null)
+  const [drawPreview, setDrawPreview] = useState(null)
   const svg = cardToSVG(card)
   const selSet = new Set(selectedIds)
 
   useEffect(() => {
     function onMove(e) {
+      // draw-to-line
+      if (drawRef.current) {
+        const rect = innerRef.current.getBoundingClientRect()
+        const x2 = (e.clientX - rect.left) / scale
+        const y2 = (e.clientY - rect.top) / scale
+        drawRef.current.x2 = x2
+        drawRef.current.y2 = y2
+        setDrawPreview({ ...drawRef.current })
+        return
+      }
       // marquee
       if (marqueeRef.current) {
         const m = marqueeRef.current
@@ -122,6 +136,12 @@ export default function CardView({
       }
       const d = dragRef.current
       if (!d) return
+      if (d.mode === 'rotate') {
+        let deg = (Math.atan2(e.clientY - d.cy, e.clientX - d.cx) * 180) / Math.PI + 90
+        if (e.shiftKey) deg = Math.round(deg / 15) * 15
+        onChange(d.primary, { rotation: Math.round(((deg % 360) + 360) % 360) })
+        return
+      }
       const baseDx = (e.clientX - d.px) / scale
       const baseDy = (e.clientY - d.py) / scale
       if (d.mode === 'move') {
@@ -143,6 +163,13 @@ export default function CardView({
       }
     }
     function onUp() {
+      if (drawRef.current) {
+        const d = drawRef.current
+        drawRef.current = null
+        setDrawPreview(null)
+        if (onDrawLine) onDrawLine(d.x1, d.y1, d.x2 ?? d.x1, d.y2 ?? d.y1)
+        return
+      }
       if (marqueeRef.current) {
         const m = marqueeRef.current
         const r = m.rect || { x: m.sx, y: m.sy, w: 0, h: 0 }
@@ -168,7 +195,7 @@ export default function CardView({
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
     }
-  }, [scale, card, onChange, onChangeMany, onCommit, onClear, onSelectMany, selectedIds])
+  }, [scale, card, onChange, onChangeMany, onCommit, onClear, onSelectMany, selectedIds, onDrawLine])
 
   function beginMove(e, el) {
     // decide the set to move
@@ -190,13 +217,33 @@ export default function CardView({
   }
 
   function bgPointerDown(e) {
-    if (commentMode) {
-      const rect = innerRef.current.getBoundingClientRect()
-      onAddComment(null, (e.clientX - rect.left) / scale, (e.clientY - rect.top) / scale)
+    const rect = innerRef.current.getBoundingClientRect()
+    const px = (e.clientX - rect.left) / scale
+    const py = (e.clientY - rect.top) / scale
+    if (drawMode === 'line') {
+      drawRef.current = { x1: px, y1: py, x2: px, y2: py }
+      setDrawPreview({ ...drawRef.current })
       return
     }
+    if (commentMode) {
+      onAddComment(null, px, py)
+      return
+    }
+    marqueeRef.current = { sx: px, sy: py, add: e.shiftKey }
+  }
+
+  function startRotate(e, el) {
+    e.stopPropagation()
+    e.preventDefault()
     const rect = innerRef.current.getBoundingClientRect()
-    marqueeRef.current = { sx: (e.clientX - rect.left) / scale, sy: (e.clientY - rect.top) / scale, add: e.shiftKey }
+    dragRef.current = {
+      ids: [el.id],
+      mode: 'rotate',
+      primary: el.id,
+      cx: rect.left + (el.x + el.w / 2) * scale,
+      cy: rect.top + (el.y + el.h / 2) * scale,
+      starts: {},
+    }
   }
 
   const hsize = 11 / scale
@@ -205,7 +252,7 @@ export default function CardView({
 
   return (
     <div
-      className={'card-frame' + (commentMode ? ' comment-mode' : '')}
+      className={'card-frame' + (commentMode ? ' comment-mode' : '') + (drawMode ? ' draw-mode' : '')}
       style={{ width: card.width * scale, height: card.height * scale }}
       onPointerDown={bgPointerDown}
     >
@@ -272,6 +319,17 @@ export default function CardView({
 
               {selected && single && !editing && !commentMode && (
                 <>
+                  <div
+                    className="rot-handle"
+                    style={{
+                      width: hsize * 1.15,
+                      height: hsize * 1.15,
+                      left: `calc(50% - ${(hsize * 1.15) / 2}px)`,
+                      top: -26 / scale,
+                    }}
+                    title="Drag to rotate (Shift = 15° steps)"
+                    onPointerDown={(e) => startRotate(e, el)}
+                  />
                   {HANDLES.map(([dir, fx, fy]) => (
                     <div
                       key={dir}
@@ -291,6 +349,23 @@ export default function CardView({
             </div>
           )
         })}
+
+        {/* line-draw preview */}
+        {drawPreview && (
+          <svg
+            className="draw-preview"
+            width={card.width}
+            height={card.height}
+            viewBox={`0 0 ${card.width} ${card.height}`}
+          >
+            <line
+              x1={drawPreview.x1} y1={drawPreview.y1}
+              x2={drawPreview.x2} y2={drawPreview.y2}
+              stroke="#3b82f6" strokeWidth={3 / scale} strokeDasharray={`${8 / scale} ${6 / scale}`}
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
 
         {/* marquee rectangle */}
         {marquee && (

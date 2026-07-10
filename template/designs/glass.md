@@ -1,4 +1,3 @@
-<!-- slate-style: glass -->
 # Glass — the Slate signature style
 
 Fancy by default: deep gradient atmospheres, floating glass panels, one luminous

@@ -53,6 +53,34 @@ export async function runAgents(payload) {
   }
 }
 
+// ── design style library ──
+export async function listDesigns() {
+  try {
+    const r = await fetch('/api/designs', { cache: 'no-store' })
+    return r.ok ? await r.json() : { styles: [], current: null }
+  } catch {
+    return { styles: [], current: null }
+  }
+}
+
+export async function applyDesign(name) {
+  try {
+    const r = await fetch('/api/designs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    return r.ok
+  } catch {
+    return false
+  }
+}
+
+// Korean/CJK IME guard: Enter during composition must not submit.
+export function isComposingEvent(e) {
+  return e.nativeEvent?.isComposing || e.keyCode === 229
+}
+
 export async function stopAgent(id) {
   try {
     await fetch('/api/agents/stop', {

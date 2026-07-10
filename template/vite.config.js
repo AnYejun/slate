@@ -359,6 +359,41 @@ Rules:
         })
       })
 
+      // design style library: list bundled design systems / apply one as design.md
+      server.middlewares.use('/api/designs', (req, res) => {
+        const dir = path.resolve(ROOT, 'designs')
+        if (req.method === 'GET') {
+          let list = []
+          try {
+            list = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''))
+          } catch { /* no designs dir */ }
+          let current = null
+          try {
+            const head = fs.readFileSync(path.resolve(ROOT, 'design.md'), 'utf8').slice(0, 400)
+            const m = head.match(/<!-- slate-style: ([\w.-]+) -->/)
+            current = m ? m[1] : null
+          } catch { /* no design.md */ }
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ styles: list, current }))
+          return
+        }
+        if (req.method === 'POST') {
+          readBody(req).then((body) => {
+            let name = ''
+            try { name = JSON.parse(body || '{}').name || '' } catch { /* keep '' */ }
+            const src = path.resolve(dir, path.basename(name) + '.md')
+            if (!name || !fs.existsSync(src)) { res.statusCode = 404; res.end('{"ok":false}'); return }
+            const content = `<!-- slate-style: ${path.basename(name)} -->\n` + fs.readFileSync(src, 'utf8')
+            fs.writeFileSync(path.resolve(ROOT, 'design.md'), content)
+            res.setHeader('Content-Type', 'application/json')
+            res.end('{"ok":true}')
+          })
+          return
+        }
+        res.statusCode = 405
+        res.end()
+      })
+
       // run sub-agents on queued directives (or a free-form prompt)
       server.middlewares.use('/api/agents/run', (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; res.end(); return }

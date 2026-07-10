@@ -117,6 +117,17 @@ as the primary way the user hands you precise, per-element work.
   (optional arrow), `image` (URL or `data:` URI).
 - **Presets**: Card 1:1 (1080²), Card 4:5 (1080×1350), Story 9:16, Figure 16:9,
   Figure 4:3.
+- **Glass/fancy effects (all exportable SVG)**: `style.opacity`, `style.blur`
+  (gaussian), `style.shadow` (`"dx dy blur color"`), and `linear:#from,#to,angle`
+  gradients for card `background` and shape `fill`. The default style (`glass`)
+  is a gradient-atmosphere glassmorphism system — see `design.md`.
+- **Design style library**: `designs/` bundles 14 systems (glass, slate, apple,
+  linear, vercel, stripe, figma, raycast, notion, spotify, nike, theverge,
+  framer, cal — the latter 12 from VoltAgent/awesome-design-md, MIT). The user
+  picks one in the inspector ("Style"); it becomes `design.md`, which you and
+  every sub-agent MUST read and follow.
+- **Canvas tools**: drag-to-draw lines (Line tool → drag), rotation handle
+  (Shift = 15° steps), zoom (⌘+wheel, −/+ buttons, % = fit), image drop.
 - **Export**: the black **Export** button → PNG (per card, 2×), SVG (per card,
   clean vectors), PDF (all cards). Tell the user to click it; downloads land in
   their browser. (You can't trigger the browser download, but you can reproduce

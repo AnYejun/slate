@@ -101,6 +101,20 @@ Drawn horizontally across the box's vertical center (`y + h/2`), from `x` to
 Prefer `data:` URIs or same-origin URLs. Cross-origin images can break PNG/PDF
 export (they taint the canvas); SVG export still works.
 
+## Effects (any element) — all export-safe SVG
+
+```jsonc
+"style": {
+  "opacity": 0.32,                      // 0–1
+  "blur": 110,                          // px gaussian — glow orbs, halos
+  "shadow": "0 24 60 rgba(0,0,0,0.35)", // dx dy blur color — floating panels
+  "fill": "linear:#5EEAD4,#A78BFA,135"  // gradients on rect/ellipse fill
+}
+```
+
+Card `background` also accepts `linear:#from,#to,angle`. Glass panel recipe and
+composition rules live in `design.md` (style: glass).
+
 ## Tips for editing
 
 - **Back-to-front order = array order.** Put backgrounds first, text last.
