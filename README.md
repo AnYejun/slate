@@ -78,6 +78,103 @@ together.
 (`claude` → `/login`); runs use your Claude subscription, not a separate API key.
 Without the CLI, the board copies the request for you to paste into chat instead.
 
+## Using Slate
+
+### Moving around the canvas (Figma-style)
+
+All your slides sit side by side on one board. Navigate it the way you'd expect:
+
+| Action | How |
+|---|---|
+| **Pan** | Hold **Space** and drag, or drag with the **middle mouse button** |
+| **Scroll** | Trackpad two-finger scroll; **Shift + scroll** moves horizontally |
+| **Zoom in / out** | **⌘ / Ctrl + scroll**, or the **− / +** buttons in the top bar |
+| **Fit to screen** | Click the **zoom %** in the top bar (it resets to fit) |
+| **Jump to a slide** | Click its thumbnail in the left **Pages** strip |
+
+While Space is held the cursor becomes a hand, so a drag pans instead of
+selecting — exactly like Figma.
+
+### Selecting and editing
+
+- **Select** — click an element on the canvas, or click a row in the **Layers**
+  list. The right **Design** panel shows its properties.
+- **Multi-select** — **Shift-click** more elements, or **drag a marquee** across
+  empty canvas. The panel switches to align / distribute controls.
+- **Move** — drag a selected element (all selected move together). Arrow keys
+  nudge 1px; **Shift + arrows** nudge 10px.
+- **Resize** — drag the square handles. **Rotate** — drag the round handle above
+  the selection (**Shift** snaps to 15°).
+- **Edit text** — double-click a text element and type. Korean IME is handled.
+- **Smart guides** — dragging snaps to other elements' edges/centers and the card
+  center, with alignment lines.
+- **Delete** — Delete / Backspace. **Undo / redo** — ⌘Z / ⌘⇧Z.
+
+### The toolbar (top center)
+
+Heading · Text · Rectangle · Ellipse · **Line** · **Image**.
+
+- **Line** — click the tool, then **drag on the canvas** to draw at any angle.
+- **Image** — click to pick a file, or just **drag an image onto the canvas**.
+  It's embedded as a data URI, so exports stay self-contained.
+
+### Pages & Layers (left panel)
+
+- **Pages** strip — thumbnails of every slide; **+** adds one; hover to duplicate
+  or delete. Click to make a slide active.
+- **Layers** list — every element on the active slide, topmost first. **Drag** a
+  row to change stacking order. Click to select, Shift-click to multi-select.
+
+### Working with Claude (the Agents tab)
+
+This is Slate's core idea: **point at what you want changed, then ask.**
+
+1. **Tag material.** Select one or more elements on the canvas (or the whole page
+   via the Pages strip). Open the **Agents** tab — your selection appears as a
+   chip on the composer (e.g. *"2 elements · Cover"*). Clear the chip to talk
+   about the whole deck instead.
+2. **Give one instruction.** Type it and press **Enter** (Shift+Enter for a new
+   line). For example: *"make this bolder"*, *"글래스 스타일로 다시"*,
+   *"align these and tighten the spacing"*.
+3. **Watch it run.** A real headless `claude -p` sub-agent starts, scoped to
+   exactly the material you tagged. Its **live shell** streams into the tab (which
+   files it reads, what it changes), and a **named cursor** moves across the
+   canvas as it edits. Toggle **follow** (the eye icon) to auto-scroll to whatever
+   it's working on.
+4. **Run several at once.** Tag other material and send another request — jobs run
+   **in parallel**, each its own card with its own shell and cursor. Press the
+   **✕** on a card to stop that agent.
+
+You can also skip tagging and give a whole-deck command, or just ask Claude in the
+normal chat window — Slate is a normal Claude Code skill, so both work on the same
+file.
+
+> **To dispatch agents**, log the Claude Code CLI in once (`claude` → `/login`).
+> Runs use your Claude subscription. Without it, the board copies your request to
+> the clipboard so you can paste it into chat.
+
+### Styling & effects
+
+- **Design system** — in the Design panel's **Style** dropdown, pick from 14
+  bundled systems (glass, apple, linear, vercel, stripe, figma, …). Your choice
+  becomes `design.md`, which every agent reads and follows.
+- **Backgrounds & fills** accept gradients: `linear:#0B1020,#1B1140,160`
+  (from, to, angle).
+- **Per-element effects** in the inspector: **Opacity**, **Blur** (glows/halos),
+  and **Shadow** (`dx dy blur color`) — all pure SVG, so they export cleanly.
+
+### Exporting
+
+Top-right **Export**: **PNG** (this slide, 2×), **SVG** (this slide, vector), or
+**PDF** (all slides). The canvas renderer and the exporter are the same code, so
+the file matches the screen exactly.
+
+### Version history
+
+The **clock** icon opens history: automatic snapshots on every change plus named
+checkpoints, each restorable in one click. Every edit an agent makes is
+snapshotted first, so nothing is ever lost.
+
 ## How it works
 
 ```

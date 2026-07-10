@@ -45,6 +45,9 @@ export default function App() {
   const [zoom, setZoom] = useState(null)
   const [drawMode, setDrawMode] = useState(null)
   const fitRef = useRef(1)
+  const [spaceHeld, setSpaceHeld] = useState(false)
+  const [panning, setPanning] = useState(false)
+  const panRef = useRef(null)
 
   // ── sub-agent runs (the work board) ──
   const [agentRuns, setAgentRuns] = useState({})
@@ -309,6 +312,62 @@ export default function App() {
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [doc])
+
+  // ── Figma-style pan: hold Space (or middle-drag) to grab the canvas ──
+  useEffect(() => {
+    function isTyping() {
+      const t = document.activeElement
+      return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+    }
+    function down(e) {
+      if (e.code === 'Space' && !e.repeat && !isTyping()) {
+        setSpaceHeld(true)
+        if (document.activeElement?.tagName !== 'BUTTON') e.preventDefault()
+      }
+    }
+    function up(e) {
+      if (e.code === 'Space') setSpaceHeld(false)
+    }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+    }
+  }, [])
+
+  useEffect(() => {
+    function move(e) {
+      const p = panRef.current
+      if (!p) return
+      const el = areaRef.current
+      el.scrollLeft = p.sl - (e.clientX - p.x)
+      el.scrollTop = p.st - (e.clientY - p.y)
+    }
+    function up() {
+      if (panRef.current) {
+        panRef.current = null
+        setPanning(false)
+      }
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+  }, [])
+
+  function startPan(e) {
+    // space+drag, or middle mouse button
+    if (!spaceHeld && e.button !== 1) return false
+    e.preventDefault()
+    e.stopPropagation()
+    const el = areaRef.current
+    panRef.current = { x: e.clientX, y: e.clientY, sl: el.scrollLeft, st: el.scrollTop }
+    setPanning(true)
+    return true
+  }
 
   // ── mutations ──
   const mutateCard = useCallback(
@@ -655,8 +714,9 @@ export default function App() {
       {/* ── stage: every card on one board ── */}
       <main className="stage">
         <div
-          className="canvas-area board-scroll"
+          className={'canvas-area board-scroll' + (panning ? ' panning' : spaceHeld ? ' pan-ready' : '')}
           ref={areaRef}
+          onPointerDownCapture={startPan}
           onDragOver={(e) => e.preventDefault()}
           onDrop={onCanvasDrop}
         >

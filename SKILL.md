@@ -113,8 +113,9 @@ was removed in favor of material tagging. Ignore `comments` if present.
   framer, cal — the latter 12 from VoltAgent/awesome-design-md, MIT). The user
   picks one in the inspector ("Style"); it becomes `design.md`, which you and
   every sub-agent MUST read and follow.
-- **Canvas tools**: drag-to-draw lines (Line tool → drag), rotation handle
-  (Shift = 15° steps), zoom (⌘+wheel, −/+ buttons, % = fit), image drop.
+- **Canvas tools**: pan (hold Space + drag, or middle-drag), zoom (⌘+wheel,
+  −/+ buttons, % = fit), drag-to-draw lines (Line tool → drag), rotation handle
+  (Shift = 15° steps), image drop. All slides sit on one Figma-style board.
 - **Export**: the black **Export** button → PNG (per card, 2×), SVG (per card,
   clean vectors), PDF (all cards). Tell the user to click it; downloads land in
   their browser. (You can't trigger the browser download, but you can reproduce

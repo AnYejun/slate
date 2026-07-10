@@ -79,7 +79,7 @@ body {
 /* ── shell grid ── */
 .app {
   display: grid;
-  grid-template-columns: 200px 1fr 280px;
+  grid-template-columns: 248px 1fr 280px;
   grid-template-rows: 52px 1fr;
   grid-template-areas:
     'topbar topbar topbar'
@@ -88,8 +88,8 @@ body {
   overflow: hidden;
   background: var(--canvas);
 }
-@media (max-width: 820px) {
-  .app { grid-template-columns: 150px 1fr 232px; }
+@media (max-width: 900px) {
+  .app { grid-template-columns: 196px 1fr 236px; }
 }
 
 /* ── top bar ── */
@@ -334,6 +334,11 @@ body {
   margin: auto;
   width: max-content;
 }
+.board-scroll.pan-ready { cursor: grab; }
+.board-scroll.panning { cursor: grabbing; }
+.board-scroll.pan-ready .card-frame,
+.board-scroll.panning .card-frame { pointer-events: none; }
+
 .board-card { position: relative; flex-shrink: 0; }
 .board-card-name {
   font-size: 12px;
@@ -1040,7 +1045,7 @@ input[type='checkbox'] {
 }
 .strip-page {
   position: relative;
-  width: 56px;
+  width: 70px;
   flex-shrink: 0;
   cursor: pointer;
   border-radius: 8px;
