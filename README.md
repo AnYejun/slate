@@ -1,110 +1,110 @@
-<p align="center"><img src="banner.svg" alt="Slate — the canvas where Claude agents hold the cursors" width="100%"/></p>
+<p align="center"><img src="banner.svg" alt="Slate — a visual canvas for Claude Code" width="100%"/></p>
+
+<p align="center">
+  <b>English</b> · <a href="README.ko.md">한국어</a>
+</p>
 
 # Slate
 
-**Your canvas has a Claude army now.**
+**An open-source Skill that gives Claude Code a visual editor for card news, carousels, and figures.**
 
-Tag elements on a Figma-style board, type one sentence, and *real* headless
-Claude sub-agents grab named cursors and redesign your deck — in parallel,
-live, while you watch. No chat window. No copy-paste. **The canvas is the
-interface.**
+Slate turns a folder of design into a live, Figma-style canvas inside Claude
+Code's preview panel. You arrange and edit visually; Claude edits the same file
+and you see it update in real time. When you want help, you can tag any element
+and ask — a Claude sub-agent makes the change while you keep working.
 
-> 카드뉴스 툴 구독하다 화나서 만들었습니다. 요소 선택하고 "더 대담하게"라고
-> 치면, 진짜 Claude 에이전트가 커서 잡고 고칩니다. 여러 개 동시에.
+The whole design is one JSON file, so nothing is locked away. What you see on the
+canvas is exactly what exports to PNG, SVG, or PDF.
 
 ---
 
-## This deck was made by Slate, about Slate, inside Slate
+## Made with Slate
 
-Claude agents designed it on the board, and Slate's own exporter rendered these
-PNGs. The source is in [`examples/slate-promo/`](examples/slate-promo/cards.json) —
-open it and remix.
+These slides were designed on the Slate canvas and rendered by its own exporter.
+The source is in [`examples/slate-promo/`](examples/slate-promo/cards.json) — open
+it in Slate and edit.
 
 <table>
   <tr>
     <td><img src="docs/promo/promo-01-hook.png" alt="Your canvas has a Claude army." width="100%"/></td>
-    <td><img src="docs/promo/promo-02-problem.png" alt="Design tools wait for your hands. Still dragging?" width="100%"/></td>
+    <td><img src="docs/promo/promo-02-problem.png" alt="Design tools wait for your hands." width="100%"/></td>
     <td><img src="docs/promo/promo-03-flip.png" alt="Slate listens instead." width="100%"/></td>
   </tr>
   <tr>
-    <td><img src="docs/promo/promo-04-parallel.png" alt="Real agents. Live shells. Tag material, give one order, watch them run in parallel." width="100%"/></td>
+    <td><img src="docs/promo/promo-04-parallel.png" alt="Real agents, live shells: tag material, give one order, watch them run." width="100%"/></td>
     <td><img src="docs/promo/promo-05-craft.png" alt="Fancy is the default — glass, gradients, glow, all pure SVG." width="100%"/></td>
-    <td><img src="docs/promo/promo-06-cta.png" alt="git clone. Say: make me a deck. github.com/AnYejun/slate" width="100%"/></td>
+    <td><img src="docs/promo/promo-06-cta.png" alt="git clone and ask Claude to make you a deck." width="100%"/></td>
   </tr>
 </table>
 
 ---
 
-## The pitch
+## What it does
 
-- 🎯 **Tag material, give orders.** Select elements (or a whole page) → they
-  become a chip on the composer → send. That agent touches *only* what you
-  tagged. Send again with other material → **parallel agents**, each with its
-  own live shell log on the work board.
-- 🖱 **Multiplayer cursors, except your teammates are AI.** Every file edit is
-  diffed server-side and walked across the canvas as a named, colored cursor
-  with glow pulses. Two agents = two cursors. Toggle *follow* and ride along.
-- 🧊 **Fancy is the default.** Glassmorphism engine — gradients
-  (`linear:#from,#to,angle`), gaussian blur, drop shadows, opacity — all pure
-  SVG, so exports match the screen pixel-for-pixel. PNG / SVG / PDF.
-- 🎨 **14 design systems built in.** glass · apple · linear · vercel · stripe ·
-  figma · raycast · notion · spotify · nike · theverge · framer · cal · slate
-  (12 via [awesome-design-md](https://github.com/VoltAgent/awesome-design-md),
-  MIT). Pick one in the inspector; every agent obeys it.
-- 🗂 **A real editor.** Figma-style board (all slides on one canvas), layers
-  panel with drag z-reorder, multi-select + marquee, smart snap guides,
-  rotation handle, ⌘-wheel zoom, drag-to-draw lines, image drag-drop, undo/redo,
-  version history with restore.
-- 🔁 **True two-way sync.** The whole deck is one `cards.json`. You drag on the
-  canvas, Claude edits the file, both stay live. Ask Claude in chat *or* command
-  it from the board — same brain, same file.
+- **Live two-way sync.** The whole deck is one `cards.json`. You drag and type on
+  the canvas; Claude edits the file; both stay in sync. Work in chat, or command
+  Claude from the board — same file, same result.
+- **Tag and ask.** Select elements (or a whole page) and they attach to the
+  composer as a chip. Ask for a change and a sub-agent handles exactly that
+  material. Send more requests to run them in parallel, each with its own live
+  shell log.
+- **Live cursors.** Every edit is diffed and shown as a named cursor moving across
+  the canvas, so you can watch changes happen — including several agents at once.
+- **Fancy by default.** A glassmorphism style engine — gradients, blur, drop
+  shadows, opacity — rendered as pure SVG, so exports match the screen exactly.
+- **14 design systems built in.** glass · apple · linear · vercel · stripe · figma ·
+  raycast · notion · spotify · nike · theverge · framer · cal · slate. Pick one and
+  every edit follows it. (Twelve are from
+  [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), MIT.)
+- **A real editor.** All slides on one Figma-style board, a layers panel with drag
+  reordering, multi-select and marquee, smart alignment guides, rotation, zoom,
+  drag-to-draw lines, image drop, undo/redo, and version history with restore.
+- **Clean exports.** PNG, SVG, and PDF — one shared serializer, so what you see is
+  what you get.
 
-## 30-second start
+## Get started
 
 ```bash
 git clone https://github.com/AnYejun/slate.git ~/.claude/skills/slate
 ```
 
-Open Claude Code, say **"카드뉴스 5장 만들어줘"** (or "design a figure for my
-paper"). Claude scaffolds the workspace, the editor opens in the preview panel
-(or full-screen at `localhost:5173`), and the cursors start moving.
+Open Claude Code and ask for something visual — for example, *"카드뉴스 5장 만들어줘"*
+or *"design a figure for my paper."* Claude sets up a workspace, opens the editor
+in the preview panel (or full-screen at `localhost:5173`), and you're editing
+together.
 
-Requirements: Node 18+. For board-dispatched agents: the
-[Claude Code CLI](https://claude.com/claude-code) logged in once (`claude` →
-`/login`) — runs bill to your Claude subscription, not a separate API key. No
-CLI? The board falls back to copy-paste directives.
+**Requirements.** Node 18+. To dispatch sub-agents from the board, the
+[Claude Code CLI](https://claude.com/claude-code) should be logged in once
+(`claude` → `/login`); runs use your Claude subscription, not a separate API key.
+Without the CLI, the board copies the request for you to paste into chat instead.
 
-## How it actually works
+## How it works
 
 ```
-you tag elements ──► POST /api/agents/run ──► spawn `claude -p` per job
-        ▲                                        (Read/Edit/Write only, 5min cap)
-        │                                                   │
-   live canvas ◄── SSE: file diff → named cursors ◄── agent edits cards.json
-   (React+Vite)         agent shell logs → work board       └─ auto-snapshot,
-                                                                restorable
+tag elements ──► POST /api/agents/run ──► claude -p per request
+      ▲                                    (Read / Edit / Write, sandboxed)
+      │                                              │
+ live canvas ◄── file diff → named cursors ◄── agent edits cards.json
+ (React + Vite)      shell output → work board       └─ auto-snapshot, restorable
 ```
 
-One file (`cards.json`) is the whole design. The dev server diffs every write,
-attributes it to the running agent, snapshots it, and streams cursors + shell
-output to the board. The on-screen SVG serializer *is* the exporter — WYSIWYG
-isn't a promise, it's an identity.
+`cards.json` is the single source of truth. The dev server watches it, diffs each
+change, attributes it to the agent that made it, snapshots it for history, and
+streams cursors and shell output to the board. The on-screen SVG serializer is
+also the exporter, so the canvas and the output are the same thing.
 
-## FAQ
+## Notes
 
-**Is this safe?** Agents run with `Read/Edit/Write` only, in the workspace
-directory, auto-accepted edits, 5-minute timeout, isolated env. Every external
-edit is snapshotted first — one click restores.
-
-**Why not just use the chat?** You can! Slate is also a normal Claude Code
-skill. The board exists because pointing at things beats describing them.
-
-**Korean IME?** 조합 중 Enter 이중 전송 문제 해결되어 있습니다.
+- **Safety.** Sub-agents run with `Read/Edit/Write` only, inside the workspace
+  directory, with a timeout and an isolated environment. Every external edit is
+  snapshotted first, and any version can be restored in one click.
+- **Chat also works.** Slate is a normal Claude Code skill — you can always just
+  ask Claude in chat. The board is there for when pointing is easier than
+  describing.
+- **Korean input.** IME composition is handled, so Enter won't submit mid-composition.
 
 ## Credits & license
 
-MIT ([LICENSE](LICENSE)). Bundled [Cal Sans](https://github.com/calcom/sans)
-(SIL OFL 1.1). Design systems from
-[VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
-(MIT). Built end-to-end — code, cursors, this README, the banner SVG — in one
-Claude Code session. 🤖
+MIT ([LICENSE](LICENSE)). Bundles [Cal Sans](https://github.com/calcom/sans)
+(SIL OFL 1.1) and design systems from
+[VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md) (MIT).

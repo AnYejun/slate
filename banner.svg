@@ -32,7 +32,7 @@
   <text x="228" y="158" font-family="Avenir Next, Segoe UI, Helvetica, Arial, sans-serif"
         font-size="64" font-weight="800" letter-spacing="-2" fill="#F8FAFC">Slate</text>
   <text x="228" y="205" font-family="Avenir Next, Segoe UI, Helvetica, Arial, sans-serif"
-        font-size="26" font-weight="500" fill="#C7D2E5">The canvas where <tspan fill="#5EEAD4" font-weight="700">Claude agents</tspan> hold the cursors.</text>
+        font-size="26" font-weight="500" fill="#C7D2E5">A visual canvas for <tspan fill="#5EEAD4" font-weight="700">Claude Code</tspan> — design by conversation.</text>
 
   <!-- fake multiplayer cursors -->
   <g transform="translate(880,96)">
