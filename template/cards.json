@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "doc": { "title": "Slate" },
+  "cards": [
+    {
+      "id": "card-intro",
+      "name": "Cover",
+      "width": 1080,
+      "height": 1350,
+      "background": "#0f172a",
+      "elements": [
+        {
+          "id": "el-badge",
+          "type": "rect",
+          "x": 100,
+          "y": 150,
+          "w": 172,
+          "h": 68,
+          "rotation": 0,
+          "style": { "fill": "#3b82f6", "stroke": "none", "strokeWidth": 0, "radius": 34 }
+        },
+        {
+          "id": "el-badge-t",
+          "type": "text",
+          "x": 100,
+          "y": 150,
+          "w": 172,
+          "h": 68,
+          "rotation": 0,
+          "text": "SLATE",
+          "style": { "color": "#ffffff", "fontSize": 30, "fontWeight": 800, "textAlign": "center", "vAlign": "center", "lineHeight": 1, "letterSpacing": 3 }
+        },
+        {
+          "id": "el-title",
+          "type": "heading",
+          "x": 100,
+          "y": 440,
+          "w": 900,
+          "h": 320,
+          "rotation": 0,
+          "text": "Design by\nconversation.",
+          "style": { "color": "#f8fafc", "fontSize": 118, "fontWeight": 800, "textAlign": "left", "vAlign": "top", "lineHeight": 1.05, "letterSpacing": -3 }
+        },
+        {
+          "id": "el-line",
+          "type": "line",
+          "x": 100,
+          "y": 830,
+          "w": 220,
+          "h": 0,
+          "rotation": 0,
+          "style": { "stroke": "#3b82f6", "strokeWidth": 8, "arrow": false }
+        },
+        {
+          "id": "el-sub",
+          "type": "text",
+          "x": 100,
+          "y": 890,
+          "w": 860,
+          "h": 180,
+          "rotation": 0,
+          "text": "Edit on the right. I keep refining on the left.",
+          "style": { "color": "#94a3b8", "fontSize": 44, "fontWeight": 400, "textAlign": "left", "vAlign": "top", "lineHeight": 1.4 }
+        }
+      ]
+    }
+  ]
+}
