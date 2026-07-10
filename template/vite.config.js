@@ -359,6 +359,31 @@ Rules:
         })
       })
 
+      // save an exported asset (data URL) into workspace exports/ — lets the
+      // editor (or an agent) persist PNG renders server-side
+      server.middlewares.use('/api/save-asset', (req, res) => {
+        if (req.method !== 'POST') { res.statusCode = 405; res.end(); return }
+        readBody(req).then((body) => {
+          try {
+            const { name, dataUrl } = JSON.parse(body || '{}')
+            const m = /^data:image\/(png|jpeg|webp);base64,(.+)$/.exec(dataUrl || '')
+            if (!name || !m) throw new Error('bad payload')
+            const buf = Buffer.from(m[2], 'base64')
+            if (buf.length > 12 * 1024 * 1024) throw new Error('too large')
+            const dir = path.resolve(ROOT, 'exports')
+            fs.mkdirSync(dir, { recursive: true })
+            const safe = path.basename(String(name)).replace(/[^\w.-]/g, '_')
+            const file = path.resolve(dir, safe.endsWith(`.${m[1]}`) ? safe : `${safe}.${m[1]}`)
+            fs.writeFileSync(file, buf)
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ ok: true, file: path.relative(ROOT, file) }))
+          } catch {
+            res.statusCode = 400
+            res.end('{"ok":false}')
+          }
+        })
+      })
+
       // design style library: list bundled design systems / apply one as design.md
       server.middlewares.use('/api/designs', (req, res) => {
         const dir = path.resolve(ROOT, 'designs')

@@ -14,6 +14,27 @@ interface.**
 
 ---
 
+## This deck was made by Slate, about Slate, inside Slate
+
+Claude agents designed it on the board, and Slate's own exporter rendered these
+PNGs. The source is in [`examples/slate-promo/`](examples/slate-promo/cards.json) —
+open it and remix.
+
+<table>
+  <tr>
+    <td><img src="docs/promo/promo-01-hook.png" alt="Your canvas has a Claude army." width="100%"/></td>
+    <td><img src="docs/promo/promo-02-problem.png" alt="Design tools wait for your hands. Still dragging?" width="100%"/></td>
+    <td><img src="docs/promo/promo-03-flip.png" alt="Slate listens instead." width="100%"/></td>
+  </tr>
+  <tr>
+    <td><img src="docs/promo/promo-04-parallel.png" alt="Real agents. Live shells. Tag material, give one order, watch them run in parallel." width="100%"/></td>
+    <td><img src="docs/promo/promo-05-craft.png" alt="Fancy is the default — glass, gradients, glow, all pure SVG." width="100%"/></td>
+    <td><img src="docs/promo/promo-06-cta.png" alt="git clone. Say: make me a deck. github.com/AnYejun/slate" width="100%"/></td>
+  </tr>
+</table>
+
+---
+
 ## The pitch
 
 - 🎯 **Tag material, give orders.** Select elements (or a whole page) → they
