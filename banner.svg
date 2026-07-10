@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#1B1140"/>
+    </linearGradient>
+    <filter id="orb" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="55"/>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="rgba(0,0,0,0.4)"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="320" rx="16" fill="url(#bg)"/>
+  <ellipse cx="140" cy="30" rx="260" ry="200" fill="#5EEAD4" opacity="0.33" filter="url(#orb)"/>
+  <ellipse cx="1080" cy="300" rx="240" ry="180" fill="#A78BFA" opacity="0.3" filter="url(#orb)"/>
+
+  <!-- glass panel -->
+  <g filter="url(#soft)" transform="rotate(-1 600 160)">
+    <rect x="90" y="52" width="1020" height="216" rx="26"
+          fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  </g>
+
+  <!-- logo mark -->
+  <g transform="translate(140,110)">
+    <rect width="60" height="60" rx="16" fill="#111111"/>
+    <rect x="14" y="12" width="22" height="30" rx="6" fill="none" stroke="#ffffff" stroke-width="3.6"/>
+    <rect x="24" y="19" width="22" height="30" rx="6" fill="#111111" stroke="#ffffff" stroke-width="3.6"/>
+  </g>
+
+  <text x="228" y="158" font-family="Avenir Next, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="64" font-weight="800" letter-spacing="-2" fill="#F8FAFC">Slate</text>
+  <text x="228" y="205" font-family="Avenir Next, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="26" font-weight="500" fill="#C7D2E5">The canvas where <tspan fill="#5EEAD4" font-weight="700">Claude agents</tspan> hold the cursors.</text>
+
+  <!-- fake multiplayer cursors -->
+  <g transform="translate(880,96)">
+    <path d="M0 0 L0 15 L3.9 11.7 L6.3 17.4 L8.9 16.3 L6.6 10.7 L11.8 10.4 Z" fill="#5EEAD4" stroke="#fff" stroke-width="1.2"/>
+    <rect x="10" y="14" width="104" height="24" rx="7" fill="#5EEAD4"/>
+    <text x="18" y="31" font-family="Segoe UI, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#06251c">Claude · Copy</text>
+  </g>
+  <g transform="translate(960,190)">
+    <path d="M0 0 L0 15 L3.9 11.7 L6.3 17.4 L8.9 16.3 L6.6 10.7 L11.8 10.4 Z" fill="#A78BFA" stroke="#fff" stroke-width="1.2"/>
+    <rect x="10" y="14" width="118" height="24" rx="7" fill="#A78BFA"/>
+    <text x="18" y="31" font-family="Segoe UI, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1e1145">Claude · Layout</text>
+  </g>
+</svg>

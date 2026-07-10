@@ -407,14 +407,45 @@ Rules:
           }
           const started = []
           if (payload.prompt && String(payload.prompt).trim()) {
+            const ask = String(payload.prompt).slice(0, 4000)
+            const targets = Array.isArray(payload.targets) ? payload.targets.slice(0, 24) : null
+            let name = 'Claude'
+            let cardId = null
+            let scope = ''
+            if (targets && targets.length) {
+              let doc = null
+              try { doc = JSON.parse(readCards()) } catch { /* tolerate */ }
+              const byCard = new Map()
+              for (const t of targets) {
+                if (!t || !t.cardId) continue
+                if (!byCard.has(t.cardId)) byCard.set(t.cardId, [])
+                if (t.elementId) byCard.get(t.cardId).push(t.elementId)
+              }
+              const parts = []
+              for (const [cid, elIds] of byCard) {
+                const card = doc?.cards.find((c) => c.id === cid)
+                const cname = card?.name || cid
+                if (cardId === null) { cardId = cid; name = `Agent · ${cname}${elIds.length ? ` · ${elIds.length} el` : ''}` }
+                if (elIds.length) {
+                  const els = elIds.map((id) => {
+                    const el = card?.elements.find((e) => e.id === id)
+                    return el ? JSON.stringify(el) : `{"id":"${id}"}`
+                  })
+                  parts.push(`On slide "${cname}" (card id "${cid}"), work ONLY on these tagged elements:\n${els.join('\n')}`)
+                } else {
+                  parts.push(`Work ONLY on slide "${cname}" (card id "${cid}") — the whole card is tagged.`)
+                }
+              }
+              scope = parts.join('\n\n') + '\n\nDo not touch anything outside the tagged material.\n\n'
+            }
             const a = spawnAgent({
-              name: 'Claude',
-              cardId: null,
-              prompt: agentPrompt({ freeform: String(payload.prompt).slice(0, 4000) }),
+              name,
+              cardId,
+              prompt: agentPrompt({ freeform: scope + ask }),
               model: payload.model,
-              directives: [String(payload.prompt).slice(0, 200)],
+              directives: [ask.slice(0, 200)],
             })
-            if (a) started.push({ id: a.id, name: a.name, cardId: null })
+            if (a) started.push({ id: a.id, name: a.name, cardId })
           } else {
             let doc
             try { doc = JSON.parse(readCards()) } catch { doc = null }

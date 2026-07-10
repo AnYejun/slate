@@ -80,10 +80,16 @@ function AgentMessage({ run, cards, onStop }) {
   )
 }
 
-export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running }) {
+export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running, target }) {
   const [prompt, setPrompt] = useState('')
+  const [cleared, setCleared] = useState(false)
   const feedRef = useRef(null)
   const taRef = useRef(null)
+
+  // re-arm the material chip whenever the selection changes
+  const targetSig = target ? `${target.cardId}:${(target.elementIds || []).join(',')}` : ''
+  useEffect(() => { setCleared(false) }, [targetSig])
+  const activeTarget = cleared ? null : target
 
   // pin feed to bottom on growth
   const depth = feed.length + Object.values(runs).reduce((n, r) => n + r.log.length + (r.summary ? 1 : 0), 0)
@@ -95,7 +101,7 @@ export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running
   function fire() {
     const p = prompt.trim()
     if (!p) return
-    onRunPrompt(p)
+    onRunPrompt(p, activeTarget)
     setPrompt('')
     if (taRef.current) taRef.current.style.height = 'auto'
   }
@@ -104,13 +110,14 @@ export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running
     <div className="agents">
       <div className="agent-feed" ref={feedRef}>
         <div className="comments-intro">
-          This is your <b>direct line to Claude</b> — no chat window needed. Type below, or queue
-          comments and hit <b>Run</b>. Each reply is a real agent working on this deck.
+          Your <b>direct line to Claude</b>. Select elements (or a page) to tag them as material,
+          type what you want, send — a real agent runs it. Send again with other material for
+          <b> parallel</b> jobs.
         </div>
 
         {feed.length === 0 && (
           <div className="comments-empty">
-            Try: <i>“모든 제목을 명조로 통일해줘”</i> · <i>“make slide 2 punchier”</i>
+            Try: tag a heading → <i>“더 대담하게”</i> · tag a page → <i>“글래스 스타일로 다시”</i>
           </div>
         )}
 
@@ -131,7 +138,27 @@ export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running
         )}
       </div>
 
-      <div className="composer">
+      <div className="composer-wrap">
+        <div className="material-bar">
+          {activeTarget ? (
+            <span className="material-chip">
+              <Icon name={activeTarget.elementIds?.length ? 'group' : 'square'} size={12} />
+              {activeTarget.elementIds?.length
+                ? `${activeTarget.elementIds.length} element${activeTarget.elementIds.length > 1 ? 's' : ''} · ${activeTarget.cardName}`
+                : `${activeTarget.cardName} (page)`}
+              <button className="chip-x" title="Untag — talk about the whole deck" onClick={() => setCleared(true)}>
+                <Icon name="x" size={11} stroke={2.5} />
+              </button>
+            </span>
+          ) : (
+            <span className="material-chip whole">
+              <Icon name="copy" size={12} />
+              Whole deck
+              <span className="chip-hint">— select elements or a page to tag material</span>
+            </span>
+          )}
+        </div>
+        <div className="composer">
         <textarea
           ref={taRef}
           rows={1}
@@ -153,6 +180,7 @@ export default function Agents({ runs, feed, cards, onStop, onRunPrompt, running
         <button className="composer-send" onClick={fire} disabled={!prompt.trim()} title="Send (Enter)">
           <Icon name="send" size={15} stroke={2} />
         </button>
+        </div>
       </div>
     </div>
   )

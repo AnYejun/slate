@@ -81,33 +81,20 @@ static image and no editing, a plain SVG/Artifact may be simpler; use Slate when
 - To verify, `preview_screenshot`, or read the rendered SVG via `preview_eval`
   (`document.querySelector('.card-svg').innerHTML`).
 
-## Comments = directives for you
+## Material tagging = how the user directs agents
 
-The user can pin **comments** on the canvas — each one is an instruction for you,
-scoped to a specific element (or card). They live in `doc.comments[]` in
-`cards.json`, so you see them through the same file.
+The board is Figma-style: every slide sits on one canvas, the left panel is
+Pages + Layers (drag = z-reorder). When the user selects elements (or a page),
+the selection appears as a **material chip** on the Agents composer. Sending a
+message dispatches a real sub-agent scoped to exactly that material; sending
+again with other material runs agents **in parallel**.
 
-Each comment: `{ id, cardId, elementId, status: 'open'|'resolved', body, replies, queued, sent }`.
-`body` is the directive; `elementId` says which element it targets (null = whole
-card). `queued`/`sent` are UI-only (the user's batch selection) — **don't touch
-them**; only ever change `status` and append to `replies`. The user sends you a
-batch (often pasted from the panel's "Send to Claude"); handle every directive
-in it. Pins on the canvas are numbered; the sidebar/tab show open counts.
+You (chat-driven Claude) don't need to do anything for this — the dev server
+composes the scoped prompts. When the user asks *you* in chat, just edit
+`cards.json` normally (targeted edits; respect `design.md`).
 
-**Your loop when the user says "apply comments" (or you notice open ones):**
-
-1. `Read` `cards.json` and find comments with `status: 'open'` and a non-empty
-   `body`. (Skip empty ones — the user is still typing them.)
-2. For each, do exactly what the `body` says to the element identified by
-   `elementId` on card `cardId`. Keep changes scoped to that target.
-3. After applying, in the same `cards.json` edit:
-   - set that comment's `status` to `'resolved'`, and
-   - append a short reply: `{ "author": "claude", "body": "<what you did>" }`.
-4. If a directive is ambiguous or you need input, DON'T resolve it — append a
-   `claude` reply asking the question and leave it `open`.
-
-The user sees resolutions and replies update live on the canvas. Treat comments
-as the primary way the user hands you precise, per-element work.
+Legacy note: older docs used a `doc.comments[]` directive system; the UI for it
+was removed in favor of material tagging. Ignore `comments` if present.
 
 ## Capabilities
 

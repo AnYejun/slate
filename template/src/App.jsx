@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CardView from './CardView.jsx'
 import Inspector from './Inspector.jsx'
-import Comments from './Comments.jsx'
 import Agents from './Agents.jsx'
+import Layers from './Layers.jsx'
 import HistoryModal from './HistoryModal.jsx'
 import { Icon, IconButton, Logo } from './Icon.jsx'
-import { emptyDoc, newCard, newComment, newElement, uid } from './model.js'
+import { emptyDoc, newCard, newElement, uid } from './model.js'
 import { exportPDF, exportPNG, exportSVG } from './export.js'
 import { loadDoc, saveDoc, subscribeEvents, runAgents, stopAgent } from './sync.js'
-import { cardToSVG } from './svg.js'
 
 const TOOLS = [
   { type: 'heading', icon: 'heading', label: 'Heading' },
@@ -34,8 +33,6 @@ export default function App() {
   const [editingEl, setEditingEl] = useState(null)
 
   const [rightTab, setRightTab] = useState('design')
-  const [commentMode, setCommentMode] = useState(false)
-  const [activeComment, setActiveComment] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
   const [toast, setToast] = useState(null)
   const [hist, setHist] = useState({ u: 0, r: 0 })
@@ -45,18 +42,18 @@ export default function App() {
   const areaRef = useRef(null)
   const [area, setArea] = useState({ w: 800, h: 600 })
   const H = useRef({ past: [], future: [], base: null, silent: false })
-  const [zoom, setZoom] = useState(null) // null = fit to view
-  const [drawMode, setDrawMode] = useState(null) // 'line' | null
+  const [zoom, setZoom] = useState(null)
+  const [drawMode, setDrawMode] = useState(null)
   const fitRef = useRef(1)
 
   // ── sub-agent runs (the work board) ──
-  const [agentRuns, setAgentRuns] = useState({}) // id → {name, cardId, status, log, directives, ...}
-  const [feed, setFeed] = useState([]) // chat thread: {t:'user', text, ts} | {t:'run', id, ts}
+  const [agentRuns, setAgentRuns] = useState({})
+  const [feed, setFeed] = useState([])
   const runningCount = Object.values(agentRuns).filter((r) => r.status === 'running').length
   const fileRef = useRef(null)
 
-  // ── live presence (Claude / agent cursors) ──
-  const [agents, setAgents] = useState({}) // name → {color, cardId, x, y, action, ts}
+  // ── live presence (agent cursors) ──
+  const [agents, setAgents] = useState({})
   const [glowIds, setGlowIds] = useState(() => new Set())
   const [follow, setFollow] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -69,6 +66,14 @@ export default function App() {
   useEffect(() => { selCardRef.current = selCard }, [selCard])
   useEffect(() => { followRef.current = follow }, [follow])
 
+  function toastMsg(m) {
+    setToast(m)
+    setTimeout(() => setToast(null), 1800)
+  }
+  function syncHist() {
+    setHist({ u: H.current.past.length, r: H.current.future.length })
+  }
+
   const applyStep = useCallback((step) => {
     const d = docRef.current
     let { x, y } = step
@@ -78,7 +83,10 @@ export default function App() {
       if (el) { x = el.x + el.w / 2; y = el.y + el.h / 2 }
     }
     if (c && (x == null || y == null)) { x = c.width / 2; y = c.height / 2 }
-    if (followRef.current && step.cardId && selCardRef.current !== step.cardId) setSelCard(step.cardId)
+    if (followRef.current && step.cardId) {
+      if (selCardRef.current !== step.cardId) setSelCard(step.cardId)
+      document.getElementById(`board-${step.cardId}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    }
     setAgents((prev) => ({
       ...prev,
       [step.agent]: { color: step.color, cardId: step.cardId, x: x ?? 80, y: y ?? 80, action: step.action, ts: Date.now() },
@@ -108,7 +116,6 @@ export default function App() {
     pump()
   }, [pump])
 
-  // fade idle agents out
   useEffect(() => {
     const iv = setInterval(() => {
       setAgents((prev) => {
@@ -132,21 +139,12 @@ export default function App() {
     )
   }
 
-  function toastMsg(m) {
-    setToast(m)
-    setTimeout(() => setToast(null), 1600)
-  }
-  function syncHist() {
-    setHist({ u: H.current.past.length, r: H.current.future.length })
-  }
-
   // ── initial load ──
   useEffect(() => {
     loadDoc()
       .then((d) => {
         externalRef.current = true
         const next = d && d.cards && d.cards.length ? d : emptyDoc()
-        if (!next.comments) next.comments = []
         setDoc(next)
         setSelCard(next.cards[0]?.id ?? null)
       })
@@ -158,7 +156,6 @@ export default function App() {
     return subscribeEvents({
       onDoc: (next, changes) => {
         if (!next || !next.cards) return
-        if (!next.comments) next.comments = []
         if (editingEl) {
           pendingExternal.current = next
           return
@@ -167,7 +164,6 @@ export default function App() {
         setDoc(next)
         setSelCard((prev) => (next.cards.find((c) => c.id === prev) ? prev : next.cards[0]?.id ?? null))
         setSelIds((prev) => prev.filter((id) => next.cards.some((c) => (c.elements || []).some((e) => e.id === id))))
-        // theatre: walk each agent's cursor across everything it changed
         enqueueSteps(
           (changes || []).map((ch) => {
             let type = ''
@@ -181,6 +177,18 @@ export default function App() {
             return { agent: who, color: agentColor(who), cardId: ch.cardId, elementId: ch.elementId, action: `${verb}${type}…` }
           }),
         )
+      },
+      onPresence: (ev) => {
+        if (!ev || !ev.agent) return
+        enqueueSteps([{
+          agent: ev.agent,
+          color: ev.color || agentColor(ev.agent),
+          cardId: ev.cardId,
+          elementId: ev.elementId,
+          x: ev.x,
+          y: ev.y,
+          action: ev.action || 'Working…',
+        }])
       },
       onAgent: (ev) => {
         if (!ev || !ev.id) return
@@ -206,22 +214,10 @@ export default function App() {
           return { ...prev, [ev.id]: next }
         })
       },
-      onPresence: (ev) => {
-        if (!ev || !ev.agent) return
-        enqueueSteps([{
-          agent: ev.agent,
-          color: ev.color || agentColor(ev.agent),
-          cardId: ev.cardId,
-          elementId: ev.elementId,
-          x: ev.x,
-          y: ev.y,
-          action: ev.action || 'Working…',
-        }])
-      },
     })
   }, [editingEl, enqueueSteps])
 
-  // ── undo/redo history ──
+  // ── undo/redo ──
   useEffect(() => {
     if (!doc) return
     const h = H.current
@@ -287,20 +283,18 @@ export default function App() {
     () => (selIds.length === 1 ? card?.elements.find((e) => e.id === selIds[0]) || null : null),
     [card, selIds],
   )
-  const comments = doc?.comments || []
-  const cardComments = useMemo(() => comments.filter((c) => c.cardId === card?.id), [comments, card])
-  const openCount = comments.filter((c) => c.status !== 'resolved').length
 
   const fitScale = useMemo(() => {
-    if (!card) return 1
-    const margin = 16
-    const s = Math.min((area.w - margin) / card.width, (area.h - margin) / card.height)
+    if (!doc || !doc.cards.length) return 1
+    const margin = 96
+    const maxW = Math.max(...doc.cards.map((c) => c.width))
+    const maxH = Math.max(...doc.cards.map((c) => c.height))
+    const s = Math.min((area.w - margin) / maxW, (area.h - margin) / maxH)
     return Math.max(0.05, Math.min(s, 1))
-  }, [card, area])
+  }, [doc, area])
   const scale = zoom ?? fitScale
   useEffect(() => { fitRef.current = fitScale }, [fitScale])
 
-  // ⌘/ctrl + wheel zoom
   useEffect(() => {
     const el = areaRef.current
     if (!el) return
@@ -352,126 +346,31 @@ export default function App() {
   const toggleSel = (id) => setSelIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const selectMany = (ids) => setSelIds(ids)
   const clearSel = () => setSelIds([])
-
-  // ── comment mutations ──
-  const mutateComment = useCallback(
-    (id, patch) => setDoc((d) => ({ ...d, comments: (d.comments || []).map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
-    [],
-  )
-  function addComment(elementId, x, y) {
-    if (!card) return
-    const existing = (doc.comments || []).find(
-      (c) => c.cardId === card.id && (c.elementId || null) === (elementId || null) && c.status !== 'resolved' && !(c.body || '').trim(),
-    )
-    if (existing) { setActiveComment(existing.id); setRightTab('comments'); return }
-    const c = newComment(card.id, elementId, x, y)
-    setDoc((d) => ({ ...d, comments: [...(d.comments || []), c] }))
-    setActiveComment(c.id)
-    setRightTab('comments')
-  }
-  function replyComment(id, body) {
-    setDoc((d) => ({ ...d, comments: (d.comments || []).map((c) => (c.id === id ? { ...c, replies: [...(c.replies || []), { author: 'user', body }] } : c)) }))
-  }
-  function resolveComment(id) {
-    setDoc((d) => ({ ...d, comments: (d.comments || []).map((c) => (c.id === id ? { ...c, status: c.status === 'resolved' ? 'open' : 'resolved' } : c)) }))
-  }
-  function deleteComment(id) {
-    setDoc((d) => ({ ...d, comments: (d.comments || []).filter((c) => c.id !== id) }))
-    if (activeComment === id) setActiveComment(null)
-  }
-  function focusComment(id) {
-    const c = comments.find((x) => x.id === id)
-    if (c) setSelCard(c.cardId)
-    setActiveComment(id)
-    setRightTab('comments')
-  }
-  function addCommentToSelection() {
-    if (element) addComment(element.id, element.x + element.w, element.y)
-    else if (card) addComment(null, 40, 40)
-  }
-
-  // ── send-to-Claude (copy directive to clipboard) ──
-  function directiveText(cm) {
-    const ci = doc.cards.findIndex((c) => c.id === cm.cardId)
-    const cardName = doc.cards[ci]?.name || cm.cardId
-    let target = 'the whole card'
-    if (cm.elementId) {
-      const el = doc.cards[ci]?.elements.find((e) => e.id === cm.elementId)
-      target = el ? `the ${el.type} element (id "${cm.elementId}")` : `element "${cm.elementId}"`
-    }
-    return `In Slate (slate/cards.json), slide "${cardName}" (id "${cm.cardId}") — for ${target}: ${cm.body}`
-  }
-  async function copyText(text) {
-    let ok = false
-    try {
-      await navigator.clipboard.writeText(text)
-      ok = true
-    } catch {
-      // fallback for sandboxed / unfocused contexts
-      try {
-        const ta = document.createElement('textarea')
-        ta.value = text
-        ta.style.position = 'fixed'
-        ta.style.top = '-1000px'
-        document.body.appendChild(ta)
-        ta.focus()
-        ta.select()
-        ok = document.execCommand('copy')
-        ta.remove()
-      } catch { /* give up */ }
-    }
-    toastMsg(ok ? 'Copied — paste into chat and send to Claude' : 'Copy failed — select the text manually')
-  }
-  function copyDirective(cm) {
-    copyText(directiveText(cm))
-    mutateComment(cm.id, { sent: true })
-  }
-  function toggleQueue(id) {
-    setDoc((d) => ({
-      ...d,
-      comments: (d.comments || []).map((c) => (c.id === id ? { ...c, queued: !c.queued, sent: !c.queued ? false : c.sent } : c)),
-    }))
-  }
-  function selectAllQueue(on) {
-    setDoc((d) => ({
-      ...d,
-      comments: (d.comments || []).map((c) => (c.status !== 'resolved' && (c.body || '').trim() ? { ...c, queued: on } : c)),
-    }))
-  }
-  async function sendQueued() {
-    const q = comments.filter((c) => c.status !== 'resolved' && (c.body || '').trim() && c.queued && !c.sent)
-    if (!q.length) { toastMsg('Nothing queued to run'); return }
-    const ids = q.map((c) => c.id)
-    // persist 'sent' immediately so the agent reads a consistent file
-    const nextDoc = { ...doc, comments: (doc.comments || []).map((c) => (ids.includes(c.id) ? { ...c, sent: true } : c)) }
-    externalRef.current = false
-    setDoc(nextDoc)
-    await saveDoc(nextDoc)
-    setFeed((f) => [...f, { t: 'user', text: `Run ${ids.length} queued directive${ids.length > 1 ? 's' : ''}`, ts: Date.now() }])
-    const r = await runAgents({ commentIds: ids })
-    if (r.ok) {
-      setRightTab('agents')
-      toastMsg(`Dispatched ${r.agents.length} agent${r.agents.length > 1 ? 's' : ''}`)
-    } else {
-      // fall back to clipboard hand-off if the CLI isn't available
-      const text =
-        'Apply these Slate directives in cards.json. For each: make the change, set the ' +
-        'comment\'s status to "resolved", and append a reply {"author":"claude","body":"<what you changed>"}.\n\n' +
-        q.map((c, i) => `${i + 1}. ${directiveText(c)}`).join('\n')
-      copyText(text)
-      toastMsg(r.error === 'claude CLI not found on this machine'
-        ? 'claude CLI not found — directives copied, paste into chat'
-        : 'Agent launch failed — directives copied instead')
+  function activateCard(id) {
+    if (selCard !== id) {
+      setSelCard(id)
+      setSelIds([])
     }
   }
 
-  async function runPrompt(prompt) {
-    setFeed((f) => [...f, { t: 'user', text: prompt, ts: Date.now() }])
-    const r = await runAgents({ prompt })
+  // ── agent dispatch (material tagging) ──
+  async function runPrompt(prompt, target) {
+    const label = target
+      ? target.elementIds?.length
+        ? `${target.elementIds.length} el · ${target.cardName}`
+        : `${target.cardName}`
+      : null
+    setFeed((f) => [...f, { t: 'user', text: label ? `⟦${label}⟧ ${prompt}` : prompt, ts: Date.now() }])
+    const targets = target
+      ? target.elementIds?.length
+        ? target.elementIds.map((id) => ({ cardId: target.cardId, elementId: id }))
+        : [{ cardId: target.cardId }]
+      : null
+    const r = await runAgents({ prompt, targets })
     if (!r.ok) toastMsg(r.error || 'Agent launch failed')
   }
 
-  // ── image insertion (file picker + drag-drop → data URI) ──
+  // ── images ──
   function insertImageFile(file) {
     if (!file || !file.type.startsWith('image/') || !card) return
     const reader = new FileReader()
@@ -482,12 +381,7 @@ export default function App() {
         const maxW = Math.min(640, card.width - 200)
         const w = Math.min(img.naturalWidth, maxW)
         const h = Math.round(w * (img.naturalHeight / img.naturalWidth))
-        const el = {
-          ...newElement('image', card),
-          x: Math.round(card.width / 2 - w / 2),
-          y: Math.round(card.height / 2 - h / 2),
-          w, h, src,
-        }
+        const el = { ...newElement('image', card), x: Math.round(card.width / 2 - w / 2), y: Math.round(card.height / 2 - h / 2), w, h, src }
         mutateCard(card.id, { elements: [...card.elements, el] })
         setSelIds([el.id])
         toastMsg('Image added')
@@ -502,28 +396,23 @@ export default function App() {
     if (f) insertImageFile(f)
   }
 
-  // drag-to-draw line: two points → horizontal line + rotation about center
-  function drawLine(x1, y1, x2, y2) {
-    if (!card) return
+  // ── draw line ──
+  function drawLineOn(cardId, x1, y1, x2, y2) {
+    const c = doc?.cards.find((cc) => cc.id === cardId)
+    if (!c) return
     const L = Math.hypot(x2 - x1, y2 - y1)
     if (L < 8) { setDrawMode(null); return }
     const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI
     const cx = (x1 + x2) / 2
     const cy = (y1 + y2) / 2
-    const el = {
-      ...newElement('line', card),
-      x: Math.round(cx - L / 2),
-      y: Math.round(cy),
-      w: Math.round(L),
-      h: 0,
-      rotation: Math.round(angle),
-    }
-    mutateCard(card.id, { elements: [...card.elements, el] })
+    const el = { ...newElement('line', c), x: Math.round(cx - L / 2), y: Math.round(cy), w: Math.round(L), h: 0, rotation: Math.round(angle) }
+    mutateCard(cardId, { elements: [...c.elements, el] })
+    setSelCard(cardId)
     setSelIds([el.id])
     setDrawMode(null)
   }
 
-  // ── element actions ──
+  // ── element / card actions ──
   function addElement(type) {
     if (!card) return
     const el = newElement(type, card)
@@ -578,8 +467,6 @@ export default function App() {
     els.forEach((e, i) => { u[e.id] = { [key]: Math.round(start + gap * i) } })
     mutateMany(card.id, u)
   }
-
-  // ── cards ──
   function addCard() {
     const base = card || newCard()
     const c = { ...newCard(), width: base.width, height: base.height, background: base.background, name: `Slide ${doc.cards.length + 1}` }
@@ -601,8 +488,7 @@ export default function App() {
   function deleteCard(id) {
     if (doc.cards.length <= 1) return
     const cards = doc.cards.filter((c) => c.id !== id)
-    const comments2 = (doc.comments || []).filter((c) => c.cardId !== id)
-    setDoc((d) => ({ ...d, cards, comments: comments2 }))
+    setDoc((d) => ({ ...d, cards }))
     if (selCard === id) setSelCard(cards[0].id)
   }
   function endEdit() {
@@ -630,7 +516,6 @@ export default function App() {
       if (typing) return
       if (e.key === 'Escape') {
         if (drawMode) setDrawMode(null)
-        else if (commentMode) setCommentMode(false)
         else clearSel()
         return
       }
@@ -649,9 +534,13 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selIds, card, editingEl, commentMode, drawMode, mutateMany, doc])
+  }, [selIds, card, editingEl, drawMode, mutateMany, doc])
 
   if (!doc || !card) return <div className="loading">Loading…</div>
+
+  const target = card
+    ? { cardId: card.id, cardName: card.name, elementIds: selIds }
+    : null
 
   return (
     <div className="app">
@@ -727,15 +616,6 @@ export default function App() {
           >
             <Icon name={follow ? 'eye' : 'eyeOff'} size={17} />
           </button>
-          <button
-            className={'icon-btn ghost comment-toggle' + (commentMode ? ' on' : '')}
-            onClick={() => { setCommentMode((v) => !v); if (!commentMode) setRightTab('comments') }}
-            title="Comment — click an element to leave Claude a directive"
-            style={{ width: 32, height: 32 }}
-          >
-            <Icon name="comment" size={17} />
-            {openCount > 0 && <span className="badge">{openCount}</span>}
-          </button>
           <span className="divider-v-sm" />
           <IconButton icon="minus" label="Zoom out" variant="subtle" size={26} iconSize={14}
             onClick={() => setZoom((z) => Math.max(0.05, (z ?? fitRef.current) / 1.25))} />
@@ -756,75 +636,62 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── sidebar ── */}
+      {/* ── left: pages + layers ── */}
       <aside className="sidebar">
-        <div className="panel-head">
-          <span className="panel-title">Pages</span>
-          <span className="count">{doc.cards.length}</span>
-          <span className="grow" />
-          <IconButton icon="plus" label="Add page" variant="subtle" size={26} iconSize={16} onClick={addCard} />
-        </div>
-        <div className="pages">
-          {doc.cards.map((c, i) => {
-            const n = comments.filter((x) => x.cardId === c.id && x.status !== 'resolved').length
-            return (
-              <div key={c.id} className={'page' + (c.id === selCard ? ' active' : '')} onClick={() => { setSelCard(c.id); setSelIds([]) }}>
-                <div className="page-thumb" style={{ aspectRatio: `${c.width} / ${c.height}`, background: c.background }}>
-                  <ThumbSVG card={c} />
-                  {n > 0 && <span className="thumb-badge">{n}</span>}
-                </div>
-                <div className="page-meta">
-                  <span className="page-index">{i + 1}</span>
-                  <span className="page-name">{c.name}</span>
-                  <span className="page-actions">
-                    <IconButton icon="copy" label="Duplicate" variant="subtle" size={24} iconSize={14} onClick={(e) => { e.stopPropagation(); duplicateCard(c.id) }} />
-                    {doc.cards.length > 1 && (
-                      <IconButton icon="trash" label="Delete" variant="danger" size={24} iconSize={14} onClick={(e) => { e.stopPropagation(); deleteCard(c.id) }} />
-                    )}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <Layers
+          cards={doc.cards}
+          activeCard={card.id}
+          selectedIds={selIds}
+          onSelectCard={(id) => { activateCard(id); document.getElementById(`board-${id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }) }}
+          onSelectElement={(id) => setSelIds([id])}
+          onToggleElement={toggleSel}
+          onAddCard={addCard}
+          onDuplicateCard={duplicateCard}
+          onDeleteCard={deleteCard}
+          onReorder={(cardId, elements) => mutateCard(cardId, { elements })}
+        />
       </aside>
 
-      {/* ── stage ── */}
+      {/* ── stage: every card on one board ── */}
       <main className="stage">
         <div
-          className={'canvas-area' + (commentMode ? ' comment-cursor' : '')}
+          className="canvas-area board-scroll"
           ref={areaRef}
-          onPointerDown={() => { if (!commentMode) { setEditingEl(null) } }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={onCanvasDrop}
         >
-          <div onPointerDown={(e) => e.stopPropagation()}>
-            <CardView
-              card={card}
-              scale={scale}
-              selectedIds={selIds}
-              editingId={editingEl}
-              onSelectOne={selectOne}
-              onToggle={toggleSel}
-              onSelectMany={selectMany}
-              onClear={clearSel}
-              onChange={(id, patch) => mutateEl(card.id, id, patch)}
-              onChangeMany={(u) => mutateMany(card.id, u)}
-              onCommit={forceSave}
-              onStartEdit={setEditingEl}
-              onEndEdit={endEdit}
-              commentMode={commentMode}
-              comments={cardComments}
-              activeComment={activeComment}
-              onAddComment={addComment}
-              onOpenComment={focusComment}
-              cursors={Object.entries(agents)
-                .filter(([, a]) => a.cardId === card.id)
-                .map(([name, a]) => ({ name, ...a }))}
-              glowIds={glowIds}
-              drawMode={drawMode}
-              onDrawLine={drawLine}
-            />
+          <div className="board">
+            {doc.cards.map((c) => (
+              <div
+                key={c.id}
+                id={`board-${c.id}`}
+                className={'board-card' + (c.id === card.id ? ' active' : '')}
+                onPointerDownCapture={() => activateCard(c.id)}
+              >
+                <div className="board-card-name">{c.name}</div>
+                <CardView
+                  card={c}
+                  scale={scale}
+                  selectedIds={c.id === card.id ? selIds : []}
+                  editingId={c.id === card.id ? editingEl : null}
+                  onSelectOne={selectOne}
+                  onToggle={toggleSel}
+                  onSelectMany={selectMany}
+                  onClear={clearSel}
+                  onChange={(id, patch) => mutateEl(c.id, id, patch)}
+                  onChangeMany={(u) => mutateMany(c.id, u)}
+                  onCommit={forceSave}
+                  onStartEdit={setEditingEl}
+                  onEndEdit={endEdit}
+                  cursors={Object.entries(agents)
+                    .filter(([, a]) => a.cardId === c.id)
+                    .map(([name, a]) => ({ name, ...a }))}
+                  glowIds={glowIds}
+                  drawMode={drawMode}
+                  onDrawLine={(x1, y1, x2, y2) => drawLineOn(c.id, x1, y1, x2, y2)}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -833,9 +700,6 @@ export default function App() {
       <aside className="right-panel">
         <div className="panel-tabs">
           <button className={rightTab === 'design' ? 'on' : ''} onClick={() => setRightTab('design')}>Design</button>
-          <button className={rightTab === 'comments' ? 'on' : ''} onClick={() => setRightTab('comments')}>
-            Comments{openCount > 0 ? ` · ${openCount}` : ''}
-          </button>
           <button className={rightTab === 'agents' ? 'on' : ''} onClick={() => setRightTab('agents')}>
             Agents{runningCount > 0 ? ` · ${runningCount}` : ''}
             {runningCount > 0 && <span className="tab-live" />}
@@ -849,8 +713,9 @@ export default function App() {
             running={runningCount}
             onStop={stopAgent}
             onRunPrompt={runPrompt}
+            target={target}
           />
-        ) : rightTab === 'design' ? (
+        ) : (
           <Inspector
             card={card}
             element={element}
@@ -863,24 +728,6 @@ export default function App() {
             onAlign={alignSelected}
             onDistribute={distributeSelected}
             onToast={toastMsg}
-          />
-        ) : (
-          <Comments
-            comments={comments}
-            cards={doc.cards}
-            activeComment={activeComment}
-            onFocus={focusComment}
-            onUpdate={mutateComment}
-            onReply={replyComment}
-            onResolve={resolveComment}
-            onDelete={deleteComment}
-            onAdd={addCommentToSelection}
-            addLabel={element ? element.type : 'this card'}
-            canAdd={!!card}
-            onCopy={copyDirective}
-            onToggleQueue={toggleQueue}
-            onSendQueued={sendQueued}
-            onSelectAll={selectAllQueue}
           />
         )}
       </aside>
@@ -922,17 +769,5 @@ function ExportMenu({ card, cards, title }) {
         </div>
       )}
     </div>
-  )
-}
-
-function ThumbSVG({ card }) {
-  return (
-    <div
-      className="thumb-svg"
-      style={{ width: '100%', height: '100%' }}
-      dangerouslySetInnerHTML={{
-        __html: cardToSVG(card).replace('<svg ', '<svg preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block" '),
-      }}
-    />
   )
 }
